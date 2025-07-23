@@ -5,12 +5,7 @@ import mongoose from "mongoose"
 export const addNote = async (req,res,next)=>{
     try {
         const {title,content} = req.body
-        const {authorization} = req.headers
-        const decoded = jwt.verify(authorization,"userSecret")
-        const user = await userModel.findById(decoded.id,'-password -__v')
-        if(!user)
-            return res.status(400).json({message:"user not found"})
-        await noteModel.create({title,content,userId:decoded.id})
+        await noteModel.create({title,content,userId:req.user._id})
         return res.status(201).json({message:"Note created."})
     } catch (error) {
         return res.status(500).json({message:"Error occurred", err: error.message || "An unexpected error occurred."});
@@ -21,15 +16,12 @@ export const addNote = async (req,res,next)=>{
 export const updateNote = async (req,res,next)=>{
     try {
         const {title,content} = req.body
-        const {authorization} = req.headers
-        const decoded = jwt.verify(authorization,"userSecret")
-        const user = await userModel.findById(decoded.id,'-password -__v')
         const {noteId} = req.params
         const note = await noteModel.findById(noteId,"-__v")
         if(!note){
             return res.status(404).json({message:"Note not exsits "})
         }
-        if(user._id.toString() !== note.userId.toString())
+        if(req.user._id.toString() !== note.userId.toString())
         {
             return res.status(401).json({message:"You are not the owner"})
         }
@@ -43,15 +35,12 @@ export const updateNote = async (req,res,next)=>{
 export const replaceNote = async (req,res,next)=>{
     try {
         const {title,content,userId} = req.body
-        const {authorization} = req.headers
-        const decoded = jwt.verify(authorization,"userSecret")
-        const user = await userModel.findById(decoded.id,'-password -__v')
         const {noteId} = req.params
         const note = await noteModel.findById(noteId,"-__v")        
         if(!note){
             return res.status(404).json({message:"Note not exsits "})
         }
-        if(user._id.toString() !== note.userId.toString())
+        if(req.user._id.toString() !== note.userId.toString())
         {
             return res.status(401).json({message:"You are not the owner"})
         }
@@ -65,12 +54,10 @@ export const replaceNote = async (req,res,next)=>{
 export const updateAllTitle = async(req,res,next)=>{
     try {
         const {title} = req.body
-        const {authorization} = req.headers
-        const decoded = jwt.verify(authorization,"userSecret")
-        if(!await noteModel.find({userId:decoded.id})){
+        if(!await noteModel.find({userId:req.user._id})){
             return res.status(404).json({message:"No notes found"})
         }
-        const notes = await noteModel.updateMany({userId:decoded.id},{title:title}).select('-__v')
+        const notes = await noteModel.updateMany({userId:req.user._id},{title:title})
         return res.status(200).json({message:"All notes updated",notes:notes})
     } catch (error) {
         return res.status(500).json({message:"Error occurred", err: error.message || "An unexpected error occurred."});
@@ -78,14 +65,12 @@ export const updateAllTitle = async(req,res,next)=>{
 }
 export const deleteNote = async (req,res,next)=>{
     try {
-        const {authorization} = req.headers
-        const decoded = jwt.verify(authorization,"userSecret")
         const {noteId} = req.params
         const note = await noteModel.findById(noteId,"-__v")
         if(!note){
             return res.status(404).json({message:"Note not exsits "})
         }
-        if(decoded.id.toString() !== note.userId.toString())
+        if(req.user._id.toString() !== note.userId.toString())
         {
             return res.status(401).json({message:"You are not the owner"})
         }
@@ -98,14 +83,12 @@ export const deleteNote = async (req,res,next)=>{
 }
 export const getNoteByID = async (req,res,next)=>{
     try {
-        const {authorization} = req.headers
-        const isAuthorized = jwt.verify(authorization,"userSecret")
         const {noteId} = req.params
         const note = await noteModel.findById(noteId)
         if(!note){
             return res.status(404).json("Note not found")
         }
-        if(isAuthorized.id.toString() !== note.userId.toString()){
+        if(req.user._id.toString() !== note.userId.toString()){
             return res.status(401).json("you are not the owner")
         }
         return res.status(200).json(note)
@@ -115,11 +98,9 @@ export const getNoteByID = async (req,res,next)=>{
 }
 export const getNoteBycontent = async (req,res,next)=>{
     try {
-        const {authorization} = req.headers
-        const isAuthorized = jwt.verify(authorization,"userSecret")
         const {content} = req.query
         const notes = await noteModel.find({
-            userId: isAuthorized.id, 
+            userId: req.user._id, 
             content: {$regex:content,$options:'i'}
         })
         if(!notes || notes.length ==0){
@@ -132,9 +113,7 @@ export const getNoteBycontent = async (req,res,next)=>{
 }
 export const getNoteWithUser = async (req,res,next)=>{
     try {
-        const {authorization} = req.headers
-        const isAuthorized = jwt.verify(authorization,"userSecret")
-        const notes = await noteModel.find({userId: isAuthorized.id},{title:1,createdAt:1,_id:0}).populate([{
+        const notes = await noteModel.find({userId: req.user._id},{title:1,createdAt:1,_id:0}).populate([{
             path:"userId",
             select:"email -_id"
         }])
@@ -148,10 +127,8 @@ export const getNoteWithUser = async (req,res,next)=>{
 }
 export const DeleteAllNotes = async (req,res,next)=>{
     try {
-        const {authorization} = req.headers
-        const isAuthorized = jwt.verify(authorization,"userSecret")
-        const notes = await noteModel.deleteMany({userId: isAuthorized.id})
-        if(!notes || notes.length ==0){
+        const notes = await noteModel.deleteMany({userId: req.user._id})
+        if(!notes || notes.deletedCount ==0){
             return res.status(404).json("No note found")
         }
         return res.status(200).json({message:"Deleted"})
@@ -161,13 +138,11 @@ export const DeleteAllNotes = async (req,res,next)=>{
 }
 export const getNotebyTitle = async (req,res,next)=>{
     try {
-        const {authorization} = req.headers
-        const isAuthorized = jwt.verify(authorization,"userSecret")
         const {title} = req.query
         const notes = await noteModel.aggregate([
         {
             $match: {
-                userId: new mongoose.Types.ObjectId(isAuthorized.id),
+                userId: new mongoose.Types.ObjectId(req.user._id),
                 title: { $regex: title, $options: "i" }
             }
         },
@@ -209,8 +184,6 @@ export const getNotebyTitle = async (req,res,next)=>{
 }
 export const getPaginatedNotes= async(req,res,next)=>{
     try {
-        const {authorization} = req.headers
-        const isAuthorized = jwt.verify(authorization,"userSecret")
 
         const page = parseInt(req.query.page) || 1
 
@@ -218,7 +191,7 @@ export const getPaginatedNotes= async(req,res,next)=>{
 
         const skip = (page - 1) * limit;
 
-        const notes = await noteModel.find({userId:isAuthorized.id})
+        const notes = await noteModel.find({userId:req.user._id})
             .skip(skip)
             .limit(limit)
             .sort({ createdAt: -1 })

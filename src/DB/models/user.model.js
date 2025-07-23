@@ -48,6 +48,8 @@ const userSchema = new mongoose.Schema({
         type:Boolean,
         default:false
     }
+},{
+    strict:false
 })
 
 const userModel = mongoose.models.user || model("user",userSchema);

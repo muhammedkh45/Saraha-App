@@ -1,9 +1,9 @@
 import nodemailer from "nodemailer";
-import { emailtemp } from "./VerficationEmail.js";
 import dotenv from 'dotenv'
 dotenv.config();
 export const sendEmail = async ({to,subject,html,attachments})=>{
-  const transporter = nodemailer.createTransport({
+  try {
+    const transporter = nodemailer.createTransport({
       port: 587,
       secure: false, 
       service: 'gmail',
@@ -17,9 +17,13 @@ export const sendEmail = async ({to,subject,html,attachments})=>{
       from: '"Verify" <eljendypaint@gmail.com>',
       to: to ||"mohamedkh4050@gmail.com",
       subject:subject|| "Verfiy your email ✔",
-      html: html||emailtemp, 
+      html: html, 
       attachments:attachments || []
     });
-    return info.accepted.length > 0 ? true : false
-  ;
+    return true;
+  } catch (error) {
+    console.log(error);
+    return false;
+  }
+    
 }
