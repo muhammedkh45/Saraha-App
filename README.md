@@ -15,7 +15,6 @@ This project is inspired by popular anonymous messaging applications like **Sara
 ## Project Structure
 - `src/` - Main source code
 - `service/` - Email and verification services
-- `generator.js` - Utility for generating secure tokens
 - See each folder for more features and details.
 
 ## Getting Started
