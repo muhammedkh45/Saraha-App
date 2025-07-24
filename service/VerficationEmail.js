@@ -1,5 +1,5 @@
-export const emailVerficationLinktemp = (link)=>{ 
-return `
+export const emailVerficationLinktemp = (link) => {
+  return `
     <!DOCTYPE html>
     <html lang="en">
       <head><meta charset="UTF-8"><title>Verify Email</title></head>
@@ -23,8 +23,8 @@ return `
         </table>
       </body>
     </html>`;
-}
-export const emailVerficationCodetemp = (code, verifyPageUrl)=>{
+};
+export const emailVerficationCodetemp = (code, verifyPageUrl) => {
   return `
       <!DOCTYPE html>
   <html lang="en">
@@ -50,7 +50,7 @@ export const emailVerficationCodetemp = (code, verifyPageUrl)=>{
               <tr>
                 <td align="center" style="padding-bottom:20px;">
                   <div style="font-size:2em; letter-spacing: 8px; font-weight:bold; color:#4caf50; background:#f0f0f0; padding:16px 32px; border-radius:8px; display:inline-block;">
-                    ${ code }
+                    ${code}
                   </div>
                 </td>
               </tr>
@@ -77,5 +77,5 @@ export const emailVerficationCodetemp = (code, verifyPageUrl)=>{
       </table>
     </body>
   </html>;
-`
-}
+`;
+};
