@@ -7,7 +7,7 @@ export const validation = (schema) => {
         validationErrors.push(data?.error?.details);
       }
       if (validationErrors.length) {
-        return resizeBy.status(400).json({ error: data.error });
+        throw new Error(`Validation error ${data.error}`, { cause: 400 });
       }
     }
     return next();

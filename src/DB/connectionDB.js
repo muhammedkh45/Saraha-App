@@ -1,8 +1,10 @@
 import mongoose from "mongoose";
-
+import dotenv from "dotenv";
+import path from "node:path";
+dotenv.config({ path: path.resolve("src/config/.env") });
 const connectDB = async () => {
   await mongoose
-    .connect("mongodb://localhost:27017/Assignment8")
+    .connect(process.env.DB_URL)
     .then(() => {
       console.log("MongoDB connected successfully");
     })

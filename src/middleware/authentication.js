@@ -1,18 +1,20 @@
 import jwt from "jsonwebtoken";
 import userModel from "../DB/models/user.model.js";
 import dotenv from "dotenv";
-dotenv.config();
+import path from "node:path";
+import { verifyToken } from "../utils/token/verifyToken.js";
+dotenv.config({ path: path.resolve("src/config/.env") });
 
 export const Authentication = async (req, res, next) => {
   try {
     const { authorization } = req.headers;
     if (!authorization) {
-      return res.status(401).json({ message: "Authorization header missing" });
+      throw new Error("Authorization header missing", { cause: 401 });
     }
     const [prefix, token] = authorization.split(" ");
 
     if (!prefix || !token) {
-      return res.status(401).json({ message: "Token not exist." });
+      throw new Error("Token not exist.", { cause: 401 });
     }
     let Signature;
     switch (prefix.toLowerCase()) {
@@ -23,28 +25,26 @@ export const Authentication = async (req, res, next) => {
         Signature = process.env.JWT_ADMIN_SECRET;
         break;
       default:
-        return res.status(401).json({ message: "Invalid token prefix" });
+        throw new Error("Invalid token prefix", { cause: 401 });
     }
-    const decoded = jwt.verify(token, Signature);
+    const decoded = await verifyToken({
+      payload: token,
+      Signature: Signature,
+    });
 
     const user = await userModel.findById(decoded.id);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      throw new Error("User not found", { cause: 404 });
     }
     req.user = user;
     return next();
   } catch (error) {
     if (error.name === "JsonWebTokenError") {
-      return res.status(401).json({ message: "Invalid token" });
+      throw new Error("Invalid token", { cause: 401 });
     } else if (error.name === "TokenExpiredError") {
-      return res.status(401).json({ message: "Token expired" });
+      throw new Error("Token expired", { cause: 401 });
     } else {
-      return res
-        .status(500)
-        .json({
-          message: "Error occurred",
-          err: error.message || "An unexpected error occurred.",
-        });
+      throw new Error("Error occurred", { cause: 500 });
     }
   }
 };

@@ -8,10 +8,7 @@ export const addNote = async (req, res, next) => {
     await noteModel.create({ title, content, userId: req.user._id });
     return res.status(201).json({ message: "Note created." });
   } catch (error) {
-    return res.status(500).json({
-      message: "Error occurred",
-      err: error.message || "An unexpected error occurred.",
-    });
+    throw new Error(error.message, { cause: 500 });
   }
 };
 
@@ -21,20 +18,17 @@ export const updateNote = async (req, res, next) => {
     const { noteId } = req.params;
     const note = await noteModel.findById(noteId, "-__v");
     if (!note) {
-      return res.status(404).json({ message: "Note not exsits " });
+      throw new Error("Note not exsits ", { cause: 404 });
     }
     if (req.user._id.toString() !== note.userId.toString()) {
-      return res.status(401).json({ message: "You are not the owner" });
+      throw new Error("You are not the owner", { cause: 401 });
     }
     const updatedNote = await noteModel
       .findByIdAndUpdate(noteId, { title: title, content: content })
       .select("-__v");
     return res.status(200).json({ message: "Updated", updatedNote });
   } catch (error) {
-    return res.status(500).json({
-      message: "Error occurred",
-      err: error.message || "An unexpected error occurred.",
-    });
+    throw new Error(error.message, { cause: 500 });
   }
 };
 export const replaceNote = async (req, res, next) => {
@@ -43,10 +37,10 @@ export const replaceNote = async (req, res, next) => {
     const { noteId } = req.params;
     const note = await noteModel.findById(noteId, "-__v");
     if (!note) {
-      return res.status(404).json({ message: "Note not exsits " });
+      throw new Error("Note not exsits ", { cause: 404 });
     }
     if (req.user._id.toString() !== note.userId.toString()) {
-      return res.status(401).json({ message: "You are not the owner" });
+      throw new Error("You are not the owner", { cause: 401 });
     }
     const updatedNote = await noteModel
       .findByIdAndUpdate(noteId, {
@@ -57,17 +51,14 @@ export const replaceNote = async (req, res, next) => {
       .select("-__v");
     return res.status(200).json({ updatedNote });
   } catch (error) {
-    return res.status(500).json({
-      message: "Error occurred",
-      err: error.message || "An unexpected error occurred.",
-    });
+    throw new Error(error.message, { cause: 500 });
   }
 };
 export const updateAllTitle = async (req, res, next) => {
   try {
     const { title } = req.body;
     if (!(await noteModel.find({ userId: req.user._id }))) {
-      return res.status(404).json({ message: "No notes found" });
+      throw new Error("No notes found", { cause: 404 });
     }
     const notes = await noteModel.updateMany(
       { userId: req.user._id },
@@ -75,10 +66,7 @@ export const updateAllTitle = async (req, res, next) => {
     );
     return res.status(200).json({ message: "All notes updated", notes: notes });
   } catch (error) {
-    return res.status(500).json({
-      message: "Error occurred",
-      err: error.message || "An unexpected error occurred.",
-    });
+    throw new Error(error.message, { cause: 500 });
   }
 };
 export const deleteNote = async (req, res, next) => {
@@ -86,20 +74,17 @@ export const deleteNote = async (req, res, next) => {
     const { noteId } = req.params;
     const note = await noteModel.findById(noteId, "-__v");
     if (!note) {
-      return res.status(404).json({ message: "Note not exsits " });
+      throw new Error("Note not exsits ", { cause: 404 });
     }
     if (req.user._id.toString() !== note.userId.toString()) {
-      return res.status(401).json({ message: "You are not the owner" });
+      throw new Error("You are not the owner", { cause: 401 });
     }
     const deletedNote = await noteModel
       .findByIdAndDelete(noteId)
       .select("-__v");
     return res.status(200).json({ message: "deleted", deletedNote });
   } catch (error) {
-    return res.status(500).json({
-      message: "Error occurred",
-      err: error.message || "An unexpected error occurred.",
-    });
+    throw new Error(error.message, { cause: 500 });
   }
 };
 export const getNoteByID = async (req, res, next) => {
@@ -107,17 +92,14 @@ export const getNoteByID = async (req, res, next) => {
     const { noteId } = req.params;
     const note = await noteModel.findById(noteId);
     if (!note) {
-      return res.status(404).json("Note not found");
+      throw new Error("Note not found", { cause: 404 });
     }
     if (req.user._id.toString() !== note.userId.toString()) {
-      return res.status(401).json("you are not the owner");
+      throw new Error("you are not the owner", { cause: 401 });
     }
     return res.status(200).json(note);
   } catch (error) {
-    return res.status(500).json({
-      message: "Error occurred",
-      err: error.message || "An unexpected error occurred.",
-    });
+    throw new Error(error.message, { cause: 500 });
   }
 };
 export const getNoteBycontent = async (req, res, next) => {
@@ -128,14 +110,11 @@ export const getNoteBycontent = async (req, res, next) => {
       content: { $regex: content, $options: "i" },
     });
     if (!notes || notes.length == 0) {
-      return res.status(404).json("No note found");
+      throw new Error("No note found", { cause: 404 });
     }
     return res.status(200).json(notes);
   } catch (error) {
-    return res.status(500).json({
-      message: "Error occurred",
-      err: error.message || "An unexpected error occurred.",
-    });
+    throw new Error(error.message, { cause: 500 });
   }
 };
 export const getNoteWithUser = async (req, res, next) => {
@@ -149,28 +128,22 @@ export const getNoteWithUser = async (req, res, next) => {
         },
       ]);
     if (!notes || notes.length == 0) {
-      return res.status(404).json("No note found");
+      throw new Error("No note found", { cause: 404 });
     }
     return res.status(200).json(notes);
   } catch (error) {
-    return res.status(500).json({
-      message: "Error occurred",
-      err: error.message || "An unexpected error occurred.",
-    });
+    throw new Error(error.message, { cause: 500 });
   }
 };
 export const DeleteAllNotes = async (req, res, next) => {
   try {
     const notes = await noteModel.deleteMany({ userId: req.user._id });
     if (!notes || notes.deletedCount == 0) {
-      return res.status(404).json("No note found");
+      throw new Error("No note found", { cause: 404 });
     }
     return res.status(200).json({ message: "Deleted" });
   } catch (error) {
-    return res.status(500).json({
-      message: "Error occurred",
-      err: error.message || "An unexpected error occurred.",
-    });
+    throw new Error(error.message, { cause: 500 });
   }
 };
 export const getNotebyTitle = async (req, res, next) => {
@@ -212,14 +185,11 @@ export const getNotebyTitle = async (req, res, next) => {
       },
     ]);
     if (!notes || notes.length == 0) {
-      return res.status(404).json("No note found");
+      throw new Error("No note found", { cause: 404 });
     }
     return res.status(200).json(notes);
   } catch (error) {
-    return res.status(500).json({
-      message: "Error occurred",
-      err: error.message || "An unexpected error occurred.",
-    });
+    throw new Error(error.message, { cause: 500 });
   }
 };
 export const getPaginatedNotes = async (req, res, next) => {
@@ -239,7 +209,7 @@ export const getPaginatedNotes = async (req, res, next) => {
 
     const total = await noteModel.countDocuments();
     if (!notes || notes.length == 0) {
-      return res.status(404).json({ message: "No notes found." });
+      throw new Error("No notes found.", { cause: 404 });
     }
     return res.status(200).json({
       page,
@@ -248,9 +218,6 @@ export const getPaginatedNotes = async (req, res, next) => {
       results: notes,
     });
   } catch (error) {
-    return res.status(500).json({
-      message: "Error occurred",
-      err: error.message || "An unexpected error occurred.",
-    });
+    throw new Error(error.message, { cause: 500 });
   }
 };

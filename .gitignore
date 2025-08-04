@@ -140,3 +140,5 @@ vite.config.ts.timestamp-*
 
 Assignment8.pdf
 utils/generator.js
+config/*
+regex.md
