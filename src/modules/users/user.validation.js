@@ -20,3 +20,32 @@ export const signupSchema = {
   // }),
   // headers: generalRules.headers,
 };
+export const updateProfileSchema = {
+  body: joi.object({
+    name: joi.string().min(3).max(30),
+    email: generalRules.email,
+    age: joi.number().min(18).max(60).integer().positive(),
+    role: joi.valid(userRole.user, userRole.admin),
+    phone: joi.string(),
+  })
+};
+export const updatePassswordSchema = {
+  body: joi.object({
+    oldPassword: generalRules.password,
+    newPassword: generalRules.password,
+    cPassword: joi.string().valid(joi.ref("newPassword")).required(),
+  }),
+};
+export const forgetPassswordSchema = {
+  body: joi.object({
+    email: generalRules.email.required(),
+  }),
+};
+export const resetPassswordSchema = {
+  body: joi.object({
+    email: generalRules.email.required(),
+    otp:joi.string().length(6).required(),
+    newPassword: generalRules.password,
+    cPassword: joi.string().valid(joi.ref("newPassword")).required(),
+  }),
+};

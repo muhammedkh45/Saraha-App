@@ -24,7 +24,7 @@ export const emailVerficationLinktemp = (link) => {
       </body>
     </html>`;
 };
-export const emailVerficationCodetemp = (code, verifyPageUrl) => {
+export const emailVerficationCodetemp = ({code, verifyPageUrl}) => {
   return `
       <!DOCTYPE html>
   <html lang="en">

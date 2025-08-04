@@ -6,6 +6,9 @@ import { eventEmitter } from "../../utils/TokenandSend.js";
 import { generateToken, verifyToken } from "../../utils/token/index.js";
 import { hash, compare } from "../../utils/Hash/index.js";
 import { encrypt, decrypt } from "../../utils/encrypt/index.js";
+import { nanoid } from "nanoid";
+import revokeTokenModel from "../../DB/models/revoke-token.model.js";
+import generateVerificationCode from "./generateVerficationCode.js";
 
 dotenv.config({ path: path.resolve("src/config/.env") });
 
@@ -48,7 +51,9 @@ export const login = async (req, res, next) => {
   const { email, password } = req.body;
   const user = await userModel.findOne({ email, isConfimed: true });
   if (!user) {
-    throw new Error("invalid email or password.", { cause: 409 });
+    throw new Error("invalid email or password. || or may be not confirmed", {
+      cause: 409,
+    });
   }
   const match = await compare({
     plainText: password,
@@ -63,7 +68,7 @@ export const login = async (req, res, next) => {
       user.role === userRole.user
         ? process.env.JWT_USER_SECRET
         : process.env.JWT_ADMIN_SECRET,
-    options: { expiresIn: "1h" },
+    options: { expiresIn: "1h", jwtid: nanoid() },
   });
 
   const refreshToken = await generateToken({
@@ -184,5 +189,136 @@ export const confirmEmail = async (req, res, next) => {
 
       throw new Error(error.message, { cause: error.cause });
     }
+  }
+};
+
+export const logout = async (req, res, next) => {
+  try {
+    const revokeToken = await revokeTokenModel.create({
+      tokenId: req.decoded.jti,
+      expireAt: req.decoded.exp,
+    });
+    res.status(200).json({ message: "Success", decoded: req.decoded });
+  } catch (error) {
+    throw new Error(error.message, { cause: 500 });
+  }
+};
+export const refreshToken = async (req, res, next) => {
+  try {
+    const accessToken = await generateToken({
+      payload: { id: req.user._id, email: req.user.email },
+      Signature:
+        req.user.role === userRole.user
+          ? process.env.JWT_USER_SECRET
+          : process.env.JWT_ADMIN_SECRET,
+      options: { expiresIn: "1h", jwtid: nanoid() },
+    });
+
+    const refreshToken = await generateToken({
+      payload: { id: req.user._id, email: req.user.email },
+      Signature:
+        req.user.role === userRole.user
+          ? process.env.JWT_USER_SECRET_REFRESH
+          : process.env.JWT_ADMIN_SECRET_REFRESH,
+    });
+    return res.status(200).json({
+      message: "Request Successfull",
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    });
+  } catch (error) {
+    throw new Error(error.message, { cause: 500 });
+  }
+};
+export const updatePassword = async (req, res, next) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    if (!compare({ plainText: oldPassword, cipherText: req.user.password })) {
+      throw new Error("password not correct", { cause: 401 });
+    }
+    req.user.password = await hash({
+      plainText: newPassword,
+      saltRounds: +process.env.SALT_ROUNDS,
+    });
+    await req.user.save();
+    return res.status(200).json({ message: "password updated Successfully" });
+  } catch (error) {
+    throw new Error(error.message, { cause: error.cause || 500 });
+  }
+};
+export const forgetPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const user = await userModel.findOne({ email });
+    if (!user) throw new Error("user not exists.", { cause: 404 });
+    const code = generateVerificationCode();
+    eventEmitter.emit("forgetPassword", {
+      data: {
+        email: email,
+        code: code,
+      },
+    });
+    user.otp = await hash({
+      plainText: code,
+      saltRounds: +process.env.SALT_ROUNDS,
+    });
+    await user.save();
+    res.status(200).json({ message: "Success" });
+  } catch (error) {
+    throw new Error(error.message, { cause: error.cause || 500 });
+  }
+};
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    const user = await userModel.findOne({ email, otp: { $exists: true } });
+    if (!user) throw new Error("user not exists.", { cause: 404 });
+    if (!(await compare({ plainText: otp, cipherText: user?.otp })))
+      throw new Error("Invalid OTP", { cause: 401 });
+    const hashed = await hash({
+      plainText: newPassword,
+      saltRounds: +process.env.SALT_ROUNDS,
+    });
+    await userModel.updateOne(
+      { email },
+      {
+        password: hashed,
+        $unset: { otp: "" },
+      }
+    );
+    res.status(200).json({ message: "Success" });
+  } catch (error) {
+    throw new Error(error.message, { cause: error.cause || 500 });
+  }
+};
+export const updateProfile = async (req, res, next) => {
+  try {
+    const { age, gender, phone, email, name } = req.body;
+    if (name) req.user.name = name;
+    if (gender) req.user.gender = gender;
+    if (age) req.user.age = age;
+    if (phone) {
+      req.user.phone = await encrypt({
+        plainText: phone,
+        signature: process.env.JWT_SECRET,
+      });
+    }
+    if (email) {
+      const user = await userModel.findOne({ email });
+      if (user) throw new Error("user Already exists", { cause: 409 });
+      eventEmitter.emit("sendEmail", {
+        data: {
+          email: email,
+          attemptsLeft: 5,
+          timeToReattempts: 0,
+        },
+      });
+      req.user.email = email;
+      req.user.isConfimed = false;
+    }
+    await req.user.save();
+    res.status(200).json({ message: "Success" });
+  } catch (error) {
+    throw new Error(error.message, { cause: error.cause || 500 });
   }
 };

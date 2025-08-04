@@ -8,6 +8,7 @@ import { authorization } from "../../middleware/authorization.js";
 const userRouter = Router();
 userRouter.post("/signup", validation(UV.signupSchema), UC.signUp);
 userRouter.post("/login", UC.login);
+userRouter.post("/logout", Authentication, UC.logout);
 userRouter.patch("/verify/:verficationToken/:refreshToken", UC.confirmEmail);
 userRouter.patch("", Authentication, UC.updateLoggedInUser);
 userRouter.delete("", Authentication, UC.deleteLoggedInUser);
@@ -16,5 +17,27 @@ userRouter.get(
   Authentication,
   authorization([userRole.user, userRole.admin]),
   UC.getProfile
+);
+userRouter.patch(
+  "/updatePasssword",
+  Authentication,
+  validation(UV.updatePassswordSchema),
+  UC.updatePassword
+);
+userRouter.patch(
+  "/forgetPasssword",
+  validation(UV.forgetPassswordSchema),
+  UC.forgetPassword
+);
+userRouter.patch(
+  "/resetPasssword",
+  validation(UV.resetPassswordSchema),
+  UC.resetPassword
+);
+userRouter.patch(
+  "/updateProfile",
+  Authentication,
+  validation(UV.updateProfileSchema),
+  UC.updateProfile
 );
 export default userRouter;

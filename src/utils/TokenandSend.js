@@ -6,7 +6,6 @@ import path from "node:path";
 import { generateToken } from "./token/generateToken.js";
 import { EventEmitter } from "events";
 import userModel from "../DB/models/user.model.js";
-import { log } from "node:console";
 export const eventEmitter = new EventEmitter();
 dotenv.config({ path: path.resolve("src/config/.env") });
 eventEmitter.on("sendEmail", async ({ data }) => {
