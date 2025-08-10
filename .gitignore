@@ -143,4 +143,5 @@ utils/generator.js
 config/*
 regex.md
 uploads/*
-multer.*
+multer.md
+multer.pdf
