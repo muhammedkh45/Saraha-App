@@ -27,7 +27,7 @@ export const updateProfileSchema = {
     age: joi.number().min(18).max(60).integer().positive(),
     role: joi.valid(userRole.user, userRole.admin),
     phone: joi.string(),
-  })
+  }),
 };
 export const updatePassswordSchema = {
   body: joi.object({
@@ -44,8 +44,13 @@ export const forgetPassswordSchema = {
 export const resetPassswordSchema = {
   body: joi.object({
     email: generalRules.email.required(),
-    otp:joi.string().length(6).required(),
+    otp: joi.string().length(6).required(),
     newPassword: generalRules.password,
     cPassword: joi.string().valid(joi.ref("newPassword")).required(),
+  }),
+};
+export const freezeProfileSchema = {
+  params: joi.object({
+    id: generalRules.id,
   }),
 };

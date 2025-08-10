@@ -7,6 +7,10 @@ export let userRole = {
   user: "user",
   admin: "admin",
 };
+export let userProviders = {
+  system: "system",
+  google: "google",
+};
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -20,7 +24,9 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
+      required: function () {
+        return this.provide == userProviders.system ? true : false;
+      },
     },
     phone: {
       type: String,
@@ -50,14 +56,23 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    otp:{
-      type:String
-    }
+    otp: {
+      type: String,
+    },
+    isDeleted: Boolean,
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
+    },
+    image: String,
+    provide: {
+      type: String,
+      enum: Object.values(userProviders),
+    },
   },
   {
     strict: false,
   }
 );
 
-const userModel = mongoose.models.user || model("user", userSchema);
-export default userModel;
+export const userModel = mongoose.models.user || model("user", userSchema);

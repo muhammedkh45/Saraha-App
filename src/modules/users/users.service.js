@@ -1,50 +1,55 @@
-import userModel from "../../DB/models/user.model.js";
+import {
+  userModel,
+  userProviders,
+  userRole,
+} from "../../DB/models/user.model.js";
 import dotenv from "dotenv";
 import path from "node:path";
-import { userRole } from "../../DB/models/user.model.js";
 import { eventEmitter } from "../../utils/TokenandSend.js";
 import { generateToken, verifyToken } from "../../utils/token/index.js";
 import { hash, compare } from "../../utils/Hash/index.js";
 import { encrypt, decrypt } from "../../utils/encrypt/index.js";
 import { nanoid } from "nanoid";
 import revokeTokenModel from "../../DB/models/revoke-token.model.js";
-import generateVerificationCode from "./generateVerficationCode.js";
+import generateVerificationCode from "../../utils/generateVerficationCode.js";
+import { OAuth2Client } from "google-auth-library";
 
 dotenv.config({ path: path.resolve("src/config/.env") });
 
 export const signUp = async (req, res, next) => {
-  const { name, email, password, phone, age, gender, role } = req.body;
-  const user = await userModel.findOne({ email });
-  if (user) throw new Error("Email already exists.", { cause: 409 });
-  const hashed = await hash({
-    plainText: password,
-    saltRounds: +process.env.SALT_ROUNDS,
-  });
-  const ciphertext = await encrypt({
-    plainText: phone,
-    signature: process.env.JWT_SECRET,
-  });
+  // const { name, email, password, phone, age, gender, role } = req.body;
+  // const user = await userModel.findOne({ email });
+  // if (user) throw new Error("Email already exists.", { cause: 409 });
+  // const hashed = await hash({
+  //   plainText: password,
+  //   saltRounds: +process.env.SALT_ROUNDS,
+  // });
+  // const ciphertext = await encrypt({
+  //   plainText: phone,
+  //   signature: process.env.JWT_SECRET,
+  // });
 
-  eventEmitter.emit("sendEmail", {
-    data: {
-      email: email,
-      attemptsLeft: 5,
-      timeToReattempts: 0,
-    },
-  });
-  const userData = {
-    name,
-    email,
-    password: hashed,
-    phone: ciphertext,
-    age,
-  };
-  if (gender) userData.gender = gender;
-  if (role) userData.role = role;
-  await userModel.create(userData);
+  // eventEmitter.emit("sendEmail", {
+  //   data: {
+  //     email: email,
+  //     attemptsLeft: 5,
+  //     timeToReattempts: 0,
+  //   },
+  // });
+  // const userData = {
+  //   name,
+  //   email,
+  //   password: hashed,
+  //   phone: ciphertext,
+  //   age,
+  // };
+  // if (gender) userData.gender = gender;
+  // if (role) userData.role = role;
+  // await userModel.create(userData);
   return res.status(201).json({
     message:
       "User added successfully. and Verification code was sent to you email",
+    file: req.file,
   });
 };
 export const login = async (req, res, next) => {
@@ -83,6 +88,55 @@ export const login = async (req, res, next) => {
     accessToken: accessToken,
     refreshToken: refreshToken,
   });
+};
+export const loginWithGmail = async (req, res, next) => {
+  try {
+    const { token } = req.body;
+    const client = new OAuth2Client();
+    async function verify() {
+      const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: process.env.WEB_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+      return payload;
+    }
+    const { email, email_verified, picture, name } = await verify();
+    let user = await userModel.findOne({ email });
+    if (!user) {
+      user = await userModel.create({
+        name,
+        email,
+        isConfimed: email_verified,
+        image: picture,
+        providor: userProviders.google,
+      });
+    } else {
+      throw new Error("Email already exits.", { cause: 409 });
+    }
+    if (user.provider !== userProviders.google) {
+      throw new Error("Please login on system ", { cause: 401 });
+    }
+    const accessToken = await generateToken({
+      payload: { id: user._id, email: email },
+      Signature:
+        user.role === userRole.user
+          ? process.env.JWT_USER_SECRET
+          : process.env.JWT_ADMIN_SECRET,
+      options: { expiresIn: "1h", jwtid: nanoid() },
+    });
+
+    const refreshToken = await generateToken({
+      payload: { id: user._id, email: email },
+      Signature:
+        user.role === userRole.user
+          ? process.env.JWT_USER_SECRET_REFRESH
+          : process.env.JWT_ADMIN_SECRET_REFRESH,
+    });
+    res.status(200).json({ message: "Loged in successfully" });
+  } catch (error) {
+    throw new Error(error.message, { cause: error.cause || 500 });
+  }
 };
 export const updateLoggedInUser = async (req, res, next) => {
   const { name, email, age } = req.body;
@@ -322,3 +376,54 @@ export const updateProfile = async (req, res, next) => {
     throw new Error(error.message, { cause: error.cause || 500 });
   }
 };
+export const freezeProfile = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (id && req.user.role !== userRole.admin) {
+      throw new Error("you can not freeze this account", { cause: 401 });
+    }
+    const user = await userModel.updateOne(
+      {
+        _id: id || req.user._id,
+        isDeleted: { $exists: false },
+      },
+      {
+        isDeleted: true,
+        deletedBy: req.user._id,
+      },
+      {
+        $inc: { __v: 1 },
+      }
+    );
+    res.status(200).json({ message: "Success" });
+  } catch (error) {
+    throw new Error(error.message, { cause: error.cause || 500 });
+  }
+};
+export const unFreezeProfile = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (id && req.user.role !== userRole.admin) {
+      throw new Error("you can not freeze this account", { cause: 401 });
+    }
+    const user = await userModel.updateOne(
+      {
+        _id: id || req.user._id,
+        isDeleted: { $exists: true },
+      },
+      {
+        $unset: { isDeleted: "" },
+        $unset: { deletedBy: "" },
+      },
+      {
+        $inc: { __v: 1 },
+      }
+    );
+    res.status(200).json({ message: "Success" });
+  } catch (error) {
+    throw new Error(error.message, { cause: error.cause || 500 });
+  }
+};
+
+//oAuth2.0 >> google , facebook
+// clientId >> frontend , backend

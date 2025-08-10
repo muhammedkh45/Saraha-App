@@ -12,14 +12,18 @@
   "description": "",
   "dependencies": {
     "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "express-async-handler": "^1.2.0",
+    "google-auth-library": "^10.2.1",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.3",
+    "multer": "^2.0.2",
     "nanoid": "^5.1.5",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.5"
   }
 }

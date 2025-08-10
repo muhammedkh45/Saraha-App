@@ -5,9 +5,11 @@ import { Authentication } from "../../middleware/authentication.js";
 import { validation } from "../../middleware/validation.js";
 import { userRole } from "../../DB/models/user.model.js";
 import { authorization } from "../../middleware/authorization.js";
+import { Multer } from "../../middleware/multer.js";
 const userRouter = Router();
-userRouter.post("/signup", validation(UV.signupSchema), UC.signUp);
+userRouter.post("/signup", Multer().single("image"),/*validation(UV.signupSchema),*/ UC.signUp);
 userRouter.post("/login", UC.login);
+userRouter.post("/login-with-gmail", UC.loginWithGmail);
 userRouter.post("/logout", Authentication, UC.logout);
 userRouter.patch("/verify/:verficationToken/:refreshToken", UC.confirmEmail);
 userRouter.patch("", Authentication, UC.updateLoggedInUser);
@@ -20,8 +22,8 @@ userRouter.get(
 );
 userRouter.patch(
   "/updatePasssword",
-  Authentication,
   validation(UV.updatePassswordSchema),
+  Authentication,
   UC.updatePassword
 );
 userRouter.patch(
@@ -36,8 +38,14 @@ userRouter.patch(
 );
 userRouter.patch(
   "/updateProfile",
-  Authentication,
   validation(UV.updateProfileSchema),
+  Authentication,
   UC.updateProfile
+);
+userRouter.delete(
+  "/freezeProfile/{:id}",
+  validation(UV.freezeProfileSchema),
+  Authentication,
+  UC.freezeProfile
 );
 export default userRouter;
