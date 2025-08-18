@@ -13,21 +13,23 @@ import { nanoid } from "nanoid";
 import revokeTokenModel from "../../DB/models/revoke-token.model.js";
 import generateVerificationCode from "../../utils/generateVerficationCode.js";
 import { OAuth2Client } from "google-auth-library";
+import cloudinary from "../../utils/cloudinary/index.js";
 
 dotenv.config({ path: path.resolve("src/config/.env") });
 
 export const signUp = async (req, res, next) => {
-  // const { name, email, password, phone, age, gender, role } = req.body;
-  // const user = await userModel.findOne({ email });
-  // if (user) throw new Error("Email already exists.", { cause: 409 });
-  // const hashed = await hash({
-  //   plainText: password,
-  //   saltRounds: +process.env.SALT_ROUNDS,
-  // });
-  // const ciphertext = await encrypt({
-  //   plainText: phone,
-  //   signature: process.env.JWT_SECRET,
-  // });
+  if (!req?.file) throw new Error("File is required", { cause: 401 });
+  const { name, email, password, phone, age, gender, role } = req.body;
+  const user = await userModel.findOne({ email });
+  if (user) throw new Error("Email already exists.", { cause: 409 });
+  const hashed = await hash({
+    plainText: password,
+    saltRounds: +process.env.SALT_ROUNDS,
+  });
+  const ciphertext = await encrypt({
+    plainText: phone,
+    signature: process.env.JWT_SECRET,
+  });
 
   // eventEmitter.emit("sendEmail", {
   //   data: {
@@ -36,20 +38,28 @@ export const signUp = async (req, res, next) => {
   //     timeToReattempts: 0,
   //   },
   // });
-  // const userData = {
-  //   name,
-  //   email,
-  //   password: hashed,
-  //   phone: ciphertext,
-  //   age,
-  // };
-  // if (gender) userData.gender = gender;
-  // if (role) userData.role = role;
-  // await userModel.create(userData);
+  const uploaded = await cloudinary.uploader
+    .upload(req?.file?.path, {
+      folder: "SarahaApp/users",
+      use_filename: true,
+      resource_type: "auto",
+    })
+    .then((result) => console.log(result));
+  const userData = {
+    name,
+    email,
+    password: hashed,
+    phone: ciphertext,
+    age,
+    image: req.file.path,
+  };
+  if (gender) userData.gender = gender;
+  if (role) userData.role = role;
+  await userModel.create(userData);
   return res.status(201).json({
     message:
       "User added successfully. and Verification code was sent to you email",
-    file: req.file,
+    uploaded,
   });
 };
 export const login = async (req, res, next) => {

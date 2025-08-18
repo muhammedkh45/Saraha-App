@@ -11,7 +11,7 @@ dotenv.config({ path: path.resolve("src/config/.env") });
 eventEmitter.on("sendEmail", async ({ data }) => {
   const { email, attemptsLeft, timeToReattempts } = data;
   try {
-    const code = generateVerificationCode();
+    const code = await generateVerificationCode();
     const verficationToken = await generateToken({
       payload: { email },
       Signature: process.env.JWT_SECRET,
@@ -24,9 +24,10 @@ eventEmitter.on("sendEmail", async ({ data }) => {
       Signature: process.env.JWT_SECRET_REFRESH,
     });
 
-    const html = emailVerficationCodetemp(
+    const html = emailVerficationCodetemp({
       code,
-      `http://localhost:3000/users/verify/${verficationToken}/${refreshToken}`
+      verifyPageUrl:`http://localhost:3000/users/verify/${verficationToken}/${refreshToken}`
+    }
     );
     const isSent = await sendEmail({ to: email, html: html });
     if (!isSent) {

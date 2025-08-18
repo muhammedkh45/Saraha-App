@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import revokeTokenModel from "../../DB/models/revoke-token.model";
+import revokeTokenModel from "../../DB/models/revoke-token.model.js";
 export const deleteRevokedTokens = cron.schedule(
   "0 0 * * *",
   async () => {

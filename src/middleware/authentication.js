@@ -1,4 +1,4 @@
-import userModel from "../DB/models/user.model.js";
+import { userModel } from "../DB/models/user.model.js";
 import dotenv from "dotenv";
 import path from "node:path";
 import { verifyToken } from "../utils/token/verifyToken.js";

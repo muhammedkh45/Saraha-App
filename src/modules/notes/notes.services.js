@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import userModel from "../../DB/models/user.model.js";
+import {userModel} from "../../DB/models/user.model.js";
 import noteModel from "../../DB/models/note.model.js";
 import mongoose from "mongoose";
 export const addNote = async (req, res, next) => {

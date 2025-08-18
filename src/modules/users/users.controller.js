@@ -5,9 +5,14 @@ import { Authentication } from "../../middleware/authentication.js";
 import { validation } from "../../middleware/validation.js";
 import { userRole } from "../../DB/models/user.model.js";
 import { authorization } from "../../middleware/authorization.js";
-import { Multer } from "../../middleware/multer.js";
+import * as Multer from "../../middleware/multer.js";
 const userRouter = Router();
-userRouter.post("/signup", Multer().single("image"),/*validation(UV.signupSchema),*/ UC.signUp);
+userRouter.post(
+  "/signup",
+  Multer.MulterRemote(/jpeg|jpg|png/).single("image"),
+  validation(UV.signupSchema),
+  UC.signUp
+);
 userRouter.post("/login", UC.login);
 userRouter.post("/login-with-gmail", UC.loginWithGmail);
 userRouter.post("/logout", Authentication, UC.logout);
