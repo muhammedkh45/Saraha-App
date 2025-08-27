@@ -5,7 +5,7 @@ import globalErrorHandler from "../src/middleware/globalErrorHandler.js";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "node:path"
-dotenv.config({path:path.resolve("src/config/.env")});
+dotenv.config({});
 import  "./modules/tokens/token.services.js";
 
 var whitelist = ["http://localhost:4200",undefined ];
