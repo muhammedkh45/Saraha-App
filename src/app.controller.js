@@ -3,6 +3,9 @@ import userRouter from "./modules/users/users.controller.js";
 import noteRouter from "./modules/notes/notes.controller.js";
 import globalErrorHandler from "../src/middleware/globalErrorHandler.js";
 import cors from "cors";
+import dotenv from "dotenv";
+import path from "node:path"
+dotenv.config({path:path.resolve("src/config/.env")});
 import  "./modules/tokens/token.services.js";
 
 var whitelist = ["http://localhost:4200",undefined ];
