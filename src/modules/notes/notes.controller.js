@@ -1,7 +1,7 @@
 import Router from "express";
 import * as NC from "../notes/notes.services.js";
 import { Authentication } from "../../middleware/authentication.js";
-const noteRouter = Router();
+const noteRouter = Router({ caseSensitive: true, mergeParams: true });
 noteRouter.post("", Authentication, NC.addNote);
 noteRouter.patch("/all", Authentication, NC.updateAllTitle);
 noteRouter.patch("/:noteId", Authentication, NC.updateNote);

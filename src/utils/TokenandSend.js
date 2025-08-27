@@ -1,13 +1,10 @@
 import generateVerificationCode from "./generateVerficationCode.js";
 import { emailVerficationCodetemp } from "../service/VerficationEmail.js";
 import { sendEmail } from "../service/sendemail.js";
-import dotenv from "dotenv";
-import path from "node:path";
 import { generateToken } from "./token/generateToken.js";
 import { EventEmitter } from "events";
 import {userModel} from "../DB/models/user.model.js";
 export const eventEmitter = new EventEmitter();
-dotenv.config({ path: path.resolve("src/config/.env") });
 eventEmitter.on("sendEmail", async ({ data }) => {
   const { email, attemptsLeft, timeToReattempts } = data;
   try {

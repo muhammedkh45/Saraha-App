@@ -1,9 +1,6 @@
 import { userModel } from "../DB/models/user.model.js";
-import dotenv from "dotenv";
-import path from "node:path";
 import { verifyToken } from "../utils/token/verifyToken.js";
 import revokeTokenModel from "../DB/models/revoke-token.model.js";
-dotenv.config({ path: path.resolve("src/config/.env") });
 
 export const Authentication = async (req, res, next) => {
   try {

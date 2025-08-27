@@ -3,8 +3,6 @@ import {
   userProviders,
   userRole,
 } from "../../DB/models/user.model.js";
-import dotenv from "dotenv";
-import path from "node:path";
 import { eventEmitter } from "../../utils/TokenandSend.js";
 import { generateToken, verifyToken } from "../../utils/token/index.js";
 import { hash, compare } from "../../utils/Hash/index.js";
@@ -14,8 +12,6 @@ import revokeTokenModel from "../../DB/models/revoke-token.model.js";
 import generateVerificationCode from "../../utils/generateVerficationCode.js";
 import { OAuth2Client } from "google-auth-library";
 import cloudinary from "../../utils/cloudinary/index.js";
-
-dotenv.config({ path: path.resolve("src/config/.env") });
 
 export const signUp = async (req, res, next) => {
   if (!req?.file) throw new Error("File is required", { cause: 401 });

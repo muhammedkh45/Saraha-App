@@ -1,10 +1,7 @@
 import { emailVerficationCodetemp } from "../service/VerficationEmail.js";
 import { sendEmail } from "../service/sendemail.js";
-import dotenv from "dotenv";
-import path from "node:path";
 import { EventEmitter } from "events";
 export const eventEmitter = new EventEmitter();
-dotenv.config({ path: path.resolve("src/config/.env") });
 eventEmitter.on("forgetPassword", async ({ data }) => {
   const { email, code } = data;
   try {
